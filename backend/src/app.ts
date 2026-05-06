@@ -1,13 +1,13 @@
-import cors from "cors";
-import express from "express";
-import { env } from "./config/env";
-import authRoutes from "./routes/authRoutes";
-import blogRoutes from "./routes/blogRoutes";
-import { errorHandler } from "./middleware/errorHandler";
-import { notFound } from "./middleware/notFound";
+import cors from 'cors';
+import express from 'express';
+import { env } from './config/env';
+import { errorHandler } from './middleware/errorHandler';
+import { notFound } from './middleware/notFound';
+import authRoutes from './routes/authRoutes';
+import blogRoutes from './routes/blogRoutes';
+import './types/express.d.ts';
 
 const app = express();
-
 app.use(
   cors({
     origin: env.CLIENT_URL,
@@ -16,22 +16,26 @@ app.use(
 );
 app.use(express.json());
 
-app.get("/", (_req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     success: true,
-    message: "Blog API is running",
+    message: 'Blog API is running',
+  });
+});
+app.use((req, res, next) => {
+  console.log('hello worlds');
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+app.get('/api/health', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is healthy',
   });
 });
 
-app.get("/api/health", (_req, res) => {
-  res.json({
-    success: true,
-    message: "Server is healthy",
-  });
-});
-
-app.use("/api/auth", authRoutes);
-app.use("/api/blogs", blogRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/blogs', blogRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -1,7 +1,8 @@
-import app from "./src/app";
-import { connectDB } from "./src/config/db";
-import { env } from "./src/config/env";
+import app from './src/app';
+import { connectDB } from './src/config/db';
+import { env } from './src/config/env';
 
+console.log('Starting server...');
 const startServer = async () => {
   await connectDB();
 
@@ -10,12 +11,12 @@ const startServer = async () => {
   });
 };
 
-process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled rejection:", reason);
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
   process.exit(1);
 });
 
 startServer().catch((error) => {
-  console.error("Failed to start server:", error);
+  console.error('Failed to start server:', error);
   process.exit(1);
 });
