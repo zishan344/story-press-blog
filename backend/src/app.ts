@@ -23,7 +23,6 @@ app.get('/', (_req, res) => {
   });
 });
 app.use((req, res, next) => {
-  console.log('hello worlds');
   console.log(`${req.method} ${req.path}`);
   next();
 });

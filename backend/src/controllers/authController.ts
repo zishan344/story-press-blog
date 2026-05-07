@@ -24,7 +24,7 @@ const toSafeUser = (user: {
 export const registerUser = asyncHandler(
   async (req: Request, res: Response) => {
     const { name, email, password, image } = req.body;
-    console.log(name);
+    console.log('registerUser called with:', { name, email, password, image });
     if (!name || !email || !password) {
       throw new AppError('Name, email, and password are required', 400);
     }
