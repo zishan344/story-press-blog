@@ -1,7 +1,10 @@
 import { BlogBrowser } from "../components/BlogBrowser";
-import { categories, posts } from "../lib/posts";
+import { getBlogs } from "../lib/api";
 
-export default function BlogsPage() {
+export default async function BlogsPage() {
+  const posts = await getBlogs();
+  const categories = Array.from(new Set(posts.map((post) => post.category)));
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className="mb-8 max-w-3xl">
@@ -12,8 +15,8 @@ export default function BlogsPage() {
           Browse articles and field notes
         </h1>
         <p className="mt-4 leading-7 text-slate-600">
-          Search through design, frontend, systems, and career posts. The
-          category filter is ready for the final API-backed version.
+          Search through the latest posts from the live blog API and narrow the
+          library by category.
         </p>
       </div>
       <BlogBrowser posts={posts} categories={categories} />

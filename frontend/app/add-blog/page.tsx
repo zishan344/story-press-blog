@@ -13,8 +13,8 @@ export default function AddBlogPage() {
             Add a new blog post
           </h1>
           <p className="mt-4 leading-7 text-slate-600">
-            Fill the required fields and submit to save the post locally for
-            the UI demo. The structure matches the backend blog model.
+            Fill the required fields and submit to publish through the
+            authenticated blog API.
           </p>
         </div>
         <AddBlogForm />

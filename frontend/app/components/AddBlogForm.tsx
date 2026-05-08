@@ -1,19 +1,21 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import type { BlogPost } from "../lib/posts";
-
-const storageKey = "storypress-local-posts";
+import { createBlog, type BlogPost } from "../lib/api";
 
 export function AddBlogForm() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { token } = useAuth();
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     title: "",
     shortDescription: "",
     fullDescription: "",
     category: "Design",
+    date: new Date().toISOString().slice(0, 10),
     priority: "medium",
     readTime: "5 min read",
     imageUrl: "",
@@ -23,49 +25,57 @@ export function AddBlogForm() {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus("");
 
-    if (!form.title || !form.shortDescription || !form.fullDescription || !form.category) {
-      setStatus("Please fill in title, short description, full description, and category.");
+    if (!form.title || !form.shortDescription || !form.fullDescription || !form.category || !form.date) {
+      setStatus("Please fill in title, short description, full description, category, and date.");
       return;
     }
 
-    const savedPosts = JSON.parse(
-      window.localStorage.getItem(storageKey) ?? "[]",
-    ) as BlogPost[];
+    if (!token) {
+      setStatus("Please log in again before submitting a blog.");
+      return;
+    }
 
-    const newPost: BlogPost = {
-      id: `${form.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
-      title: form.title,
-      shortDescription: form.shortDescription,
-      fullDescription: form.fullDescription,
-      category: form.category,
-      priority: form.priority as BlogPost["priority"],
-      readTime: form.readTime,
-      authorName: user?.name ?? "StoryPress Writer",
-      date: new Date().toLocaleDateString("en", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }),
-      imageUrl:
-        form.imageUrl ||
-        "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80",
-    };
+    setLoading(true);
 
-    window.localStorage.setItem(storageKey, JSON.stringify([newPost, ...savedPosts]));
-    setStatus("Blog post added successfully.");
-    setForm({
-      title: "",
-      shortDescription: "",
-      fullDescription: "",
-      category: "Design",
-      priority: "medium",
-      readTime: "5 min read",
-      imageUrl: "",
-    });
+    try {
+      const newPost = await createBlog(
+        {
+          ...form,
+          date: new Date(form.date).toISOString(),
+          priority: form.priority as BlogPost["priority"],
+          imageUrl:
+            form.imageUrl ||
+            "https://images.unsplash.com/photo-1499750310107-5fef28a66643",
+        },
+        token,
+      );
+
+      setStatus("Blog post added successfully.");
+      setForm({
+        title: "",
+        shortDescription: "",
+        fullDescription: "",
+        category: "Design",
+        date: new Date().toISOString().slice(0, 10),
+        priority: "medium",
+        readTime: "5 min read",
+        imageUrl: "",
+      });
+      router.push(`/blogs/${newPost.id}`);
+      router.refresh();
+    } catch (caughtError) {
+      setStatus(
+        caughtError instanceof Error ?
+          caughtError.message
+        : "Could not create blog. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,7 +130,18 @@ export function AddBlogForm() {
           placeholder="Write the full blog content"
         />
       </label>
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-4">
+        <label>
+          <span className="mb-2 block text-sm font-bold text-slate-700">
+            Date
+          </span>
+          <input
+            type="date"
+            value={form.date}
+            onChange={(event) => updateField("date", event.target.value)}
+            className="h-12 w-full rounded-md border border-slate-300 px-4 text-sm"
+          />
+        </label>
         <label>
           <span className="mb-2 block text-sm font-bold text-slate-700">
             Priority
@@ -172,9 +193,10 @@ export function AddBlogForm() {
 
       <button
         type="submit"
+        disabled={loading}
         className="h-12 rounded-md bg-emerald-800 px-6 text-sm font-bold text-white hover:bg-emerald-900 md:w-fit"
       >
-        Submit Blog
+        {loading ? "Submitting..." : "Submit Blog"}
       </button>
     </form>
   );

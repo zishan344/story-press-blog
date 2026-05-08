@@ -1,33 +1,117 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { BlogPost } from "../lib/posts";
+import { useEffect, useMemo, useState } from "react";
+import { deleteBlog, getBlogs, type BlogPost } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
-const storageKey = "storypress-local-posts";
+export function ManageBlogs() {
+  const { token, user } = useAuth();
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
 
-export function ManageBlogs({ initialPosts }: { initialPosts: BlogPost[] }) {
-  const [localPosts, setLocalPosts] = useState<BlogPost[]>(() => {
-    if (typeof window === "undefined") {
+  const ownPosts = useMemo(() => {
+    if (!user) {
       return [];
     }
 
-    return JSON.parse(window.localStorage.getItem(storageKey) ?? "[]") as BlogPost[];
-  });
+    return posts.filter((post) => {
+      const authorId = post.authorId ?? post.author?._id;
+      const authorEmail = post.author?.email;
 
-  const allPosts = useMemo(
-    () => [...localPosts, ...initialPosts],
-    [localPosts, initialPosts],
-  );
+      return authorId === user.id || authorEmail === user.email;
+    });
+  }, [posts, user]);
 
-  const deletePost = (id: string) => {
-    const nextPosts = localPosts.filter((post) => post.id !== id);
-    setLocalPosts(nextPosts);
-    window.localStorage.setItem(storageKey, JSON.stringify(nextPosts));
+  useEffect(() => {
+    let active = true;
+
+    async function loadPosts() {
+      setLoading(true);
+      setMessage("");
+
+      try {
+        const nextPosts = await getBlogs();
+
+        if (active) {
+          setPosts(nextPosts);
+        }
+      } catch (caughtError) {
+        if (active) {
+          setMessage(
+            caughtError instanceof Error ?
+              caughtError.message
+            : "Could not load blogs.",
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadPosts();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const deletePost = async (id: string) => {
+    if (!token || !user) {
+      setMessage("Please log in again before deleting a blog.");
+      return;
+    }
+
+    const targetPost = ownPosts.find((post) => post.id === id);
+
+    if (!targetPost) {
+      setMessage("You can only delete your own blog posts.");
+      return;
+    }
+
+    const confirmed = window.confirm("Delete this blog post?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteBlog(id, token);
+      setPosts((current) => current.filter((post) => post.id !== id));
+      setMessage("Blog deleted successfully.");
+    } catch (caughtError) {
+      setMessage(
+        caughtError instanceof Error ?
+          caughtError.message
+        : "Could not delete blog.",
+      );
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="rounded-md border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="h-40 animate-pulse rounded-md bg-slate-100" />
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      {message && (
+        <p
+          className={`border-b px-5 py-3 text-sm font-semibold ${
+            message.includes("successfully")
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-rose-200 bg-rose-50 text-rose-700"
+          }`}
+        >
+          {message}
+        </p>
+      )}
       <div className="grid gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-600 md:grid-cols-[1.4fr_0.7fr_0.7fr_160px]">
         <span>Post</span>
         <span>Category</span>
@@ -35,10 +119,8 @@ export function ManageBlogs({ initialPosts }: { initialPosts: BlogPost[] }) {
         <span>Actions</span>
       </div>
       <div className="divide-y divide-slate-200">
-        {allPosts.map((post) => {
-          const canDelete = localPosts.some((localPost) => localPost.id === post.id);
-
-          return (
+        {ownPosts.length > 0 ?
+          ownPosts.map((post) => (
             <div
               key={post.id}
               className="grid gap-4 px-5 py-5 md:grid-cols-[1.4fr_0.7fr_0.7fr_160px] md:items-center"
@@ -65,15 +147,21 @@ export function ManageBlogs({ initialPosts }: { initialPosts: BlogPost[] }) {
                 <button
                   type="button"
                   onClick={() => deletePost(post.id)}
-                  disabled={!canDelete}
-                  className="rounded-md border border-rose-200 px-3 py-2 text-sm font-bold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                  className="rounded-md border border-rose-200 px-3 py-2 text-sm font-bold text-rose-700 hover:bg-rose-50"
                 >
                   Delete
                 </button>
               </div>
             </div>
-          );
-        })}
+          ))
+        : (
+          <div className="px-5 py-10 text-center">
+            <h2 className="text-2xl font-bold text-slate-950">No blogs yet</h2>
+            <p className="mt-2 text-slate-600">
+              Your published blogs from the API will appear here.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPostById, posts } from "../../lib/posts";
-
-export function generateStaticParams() {
-  return posts.map((post) => ({ id: post.id }));
-}
+import { getBlogById } from "../../lib/api";
 
 export default async function BlogDetailsPage({
   params,
@@ -13,11 +9,17 @@ export default async function BlogDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const post = getPostById(id);
+  const post = await getBlogById(id).catch(() => null);
 
   if (!post) {
     notFound();
   }
+
+  const publishedDate = new Intl.DateTimeFormat("en", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(post.date));
 
   return (
     <article>
@@ -39,7 +41,7 @@ export default async function BlogDetailsPage({
               </h1>
               <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold text-slate-600">
                 <span>{post.authorName}</span>
-                <span>{post.date}</span>
+                <span>{publishedDate}</span>
                 <span>{post.readTime}</span>
                 <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900">
                   {post.priority} priority

@@ -1,8 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { BlogPost } from "../lib/posts";
+import type { BlogPost } from "../lib/api";
 
 export function BlogCard({ post }: { post: BlogPost }) {
+  const publishedDate = new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(post.date));
+
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl">
       <Image
@@ -26,7 +32,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
           {post.shortDescription}
         </p>
         <div className="mt-auto flex items-center justify-between gap-4 pt-6">
-          <span className="text-sm font-medium text-slate-500">{post.date}</span>
+          <span className="text-sm font-medium text-slate-500">{publishedDate}</span>
           <Link
             href={`/blogs/${post.id}`}
             className="rounded-md bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800"

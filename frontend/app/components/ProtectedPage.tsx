@@ -1,12 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
 export function ProtectedPage({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isReady } = useAuth();
+
+  useEffect(() => {
+    if (isReady && !user) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [isReady, pathname, router, user]);
 
   if (!isReady) {
     return (
@@ -27,15 +34,8 @@ export function ProtectedPage({ children }: { children: React.ReactNode }) {
             Login is required
           </h1>
           <p className="mt-4 text-slate-600">
-            Please log in before opening {pathname}. After login, you can use
-            the protected blog tools.
+            Redirecting you to login before opening {pathname}.
           </p>
-          <Link
-            href="/login"
-            className="mt-6 inline-flex h-12 items-center justify-center rounded-md bg-emerald-800 px-6 text-sm font-bold text-white hover:bg-emerald-900"
-          >
-            Go to Login
-          </Link>
         </div>
       </section>
     );

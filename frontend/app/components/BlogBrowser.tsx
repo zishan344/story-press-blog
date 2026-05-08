@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BlogCard } from "./BlogCard";
-import type { BlogPost } from "../lib/posts";
+import type { BlogPost } from "../lib/api";
 
 export function BlogBrowser({
   posts,
@@ -11,8 +12,9 @@ export function BlogBrowser({
   posts: BlogPost[];
   categories: string[];
 }) {
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
+  const [category, setCategory] = useState(searchParams.get("category") ?? "All");
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {

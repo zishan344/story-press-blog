@@ -1,6 +1,5 @@
 import { ManageBlogs } from "../components/ManageBlogs";
 import { ProtectedPage } from "../components/ProtectedPage";
-import { posts } from "../lib/posts";
 
 export default function ManageBlogsPage() {
   return (
@@ -14,11 +13,11 @@ export default function ManageBlogsPage() {
             Manage blog posts
           </h1>
           <p className="mt-4 leading-7 text-slate-600">
-            Review all posts, open detail pages, and delete locally added posts.
-            Seed posts are locked to keep the demo content stable.
+            Review posts from the live API, open detail pages, and delete posts
+            with your authenticated session.
           </p>
         </div>
-        <ManageBlogs initialPosts={posts} />
+        <ManageBlogs />
       </section>
     </ProtectedPage>
   );

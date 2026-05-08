@@ -1,17 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BlogCard } from "./components/BlogCard";
-import { posts } from "./lib/posts";
+import { getBlogs } from "./lib/api";
 
-const featuredPosts = posts.slice(0, 3);
-const categories = [
-  { name: "Design", count: 14, tone: "bg-emerald-100 text-emerald-900" },
-  { name: "Frontend", count: 19, tone: "bg-sky-100 text-sky-950" },
-  { name: "Career", count: 11, tone: "bg-amber-100 text-amber-950" },
-  { name: "Systems", count: 8, tone: "bg-rose-100 text-rose-950" },
+const categoryTones = [
+  "bg-emerald-100 text-emerald-900",
+  "bg-sky-100 text-sky-950",
+  "bg-amber-100 text-amber-950",
+  "bg-rose-100 text-rose-950",
 ];
 
-export default function Home() {
+export default async function Home() {
+  const posts = await getBlogs();
+  const featuredPosts = posts.slice(0, 3);
+  const categories = Array.from(
+    posts.reduce((map, post) => {
+      map.set(post.category, (map.get(post.category) ?? 0) + 1);
+      return map;
+    }, new Map<string, number>()),
+  ).map(([name, count], index) => ({
+    name,
+    count,
+    tone: categoryTones[index % categoryTones.length],
+  }));
+
   return (
     <>
       <section className="relative overflow-hidden border-b border-slate-200 bg-[#f6f2e9]">
@@ -55,10 +67,11 @@ export default function Home() {
             <div className="absolute -bottom-6 left-6 right-6 rounded-md border border-slate-200 bg-white p-5 shadow-xl">
               <p className="text-sm font-semibold text-slate-500">Editor pick</p>
               <p className="mt-2 text-xl font-bold text-slate-950">
-                Design Systems That Stay Useful
+                {featuredPosts[0]?.title ?? "Latest from StoryPress"}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                A practical guide to keeping shared patterns clear as teams grow.
+                {featuredPosts[0]?.shortDescription ??
+                  "Fresh writing from the live blog API appears here."}
               </p>
             </div>
           </div>
@@ -79,11 +92,20 @@ export default function Home() {
             View all posts
           </Link>
         </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {featuredPosts.map((post) => (
-            <BlogCard key={post.id} post={post} />
-          ))}
-        </div>
+        {featuredPosts.length > 0 ?
+          <div className="grid gap-6 md:grid-cols-3">
+            {featuredPosts.map((post) => (
+              <BlogCard key={post.id} post={post} />
+            ))}
+          </div>
+        : (
+          <div className="rounded-md border border-dashed border-slate-300 bg-white p-10 text-center">
+            <h2 className="text-2xl font-bold text-slate-950">No posts yet</h2>
+            <p className="mt-3 text-slate-600">
+              Add your first blog from the protected editor.
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="border-y border-slate-200 bg-white py-20">
