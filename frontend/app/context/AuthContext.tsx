@@ -1,6 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  SessionProvider,
+  signIn,
+  signOut,
+  useSession,
+} from "next-auth/react";
 import { loginUser, registerUser, type User } from "../lib/api";
 
 type AuthContextValue = {
@@ -18,6 +24,15 @@ const userStorageKey = "storypress-user";
 const tokenStorageKey = "storypress-token";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <SessionProvider>
+      <AuthStateProvider>{children}</AuthStateProvider>
+    </SessionProvider>
+  );
+}
+
+function AuthStateProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -40,6 +55,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  useEffect(() => {
+    if (status === "loading") {
+      return;
+    }
+
+    queueMicrotask(() => {
+      if (!session?.user) {
+        if (user?.provider === "google") {
+          setUser(null);
+          setToken(null);
+          window.localStorage.removeItem(userStorageKey);
+          window.localStorage.removeItem(tokenStorageKey);
+        }
+
+        setIsReady(true);
+        return;
+      }
+
+      const nextUser: User = {
+        id: session.user.id,
+        name: session.user.name ?? "Google User",
+        email: session.user.email ?? "",
+        image: session.user.image ?? undefined,
+        provider: session.user.provider ?? "google",
+      };
+      const nextToken = session.idToken ?? session.accessToken ?? null;
+
+      setUser(nextUser);
+      setToken(nextToken);
+      window.localStorage.setItem(userStorageKey, JSON.stringify(nextUser));
+
+      if (nextToken) {
+        window.localStorage.setItem(tokenStorageKey, nextToken);
+      } else {
+        window.localStorage.removeItem(tokenStorageKey);
+      }
+
+      setIsReady(true);
+    });
+  }, [session, status, user?.provider]);
+
   const persistSession = (nextUser: User, nextToken: string) => {
     setUser(nextUser);
     setToken(nextToken);
@@ -61,18 +117,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         persistSession(data.user, data.token);
       },
       loginWithGoogle: async () => {
-        persistSession({
-          id: "google-demo-user",
-          name: "Google Writer",
-          email: "writer@gmail.com",
-          provider: "google",
-        }, "google-demo-token");
+        const nextUrl =
+          new URL(window.location.href).searchParams.get("next") || "/";
+
+        await signIn("google", { redirectTo: nextUrl });
       },
       logout: () => {
         setUser(null);
         setToken(null);
         window.localStorage.removeItem(userStorageKey);
         window.localStorage.removeItem(tokenStorageKey);
+        void signOut({ redirect: false });
       },
     }),
     [isReady, token, user],

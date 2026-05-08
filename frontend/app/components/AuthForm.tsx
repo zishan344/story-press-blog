@@ -59,12 +59,17 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   };
 
   const handleGoogle = async () => {
+    setError('');
     setLoading(true);
+
     try {
       await loginWithGoogle();
-      const nextUrl =
-        new URL(window.location.href).searchParams.get('next') || '/';
-      router.push(nextUrl);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ?
+          caughtError.message
+        : 'Google sign-in failed. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
