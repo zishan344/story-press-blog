@@ -1,6 +1,5 @@
 import cors from 'cors';
 import express from 'express';
-import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import authRoutes from './routes/authRoutes';
@@ -8,12 +7,7 @@ import blogRoutes from './routes/blogRoutes';
 import './types/express.d.ts';
 
 const app = express();
-app.use(
-  cors({
-    origin: env.CLIENT_URL,
-    credentials: true,
-  }),
-);
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (_req, res) => {

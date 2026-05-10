@@ -1,5 +1,6 @@
-import { BlogBrowser } from "../components/BlogBrowser";
-import { getBlogs } from "../lib/api";
+import { Suspense } from 'react';
+import { BlogBrowser } from '../components/BlogBrowser';
+import { getBlogs } from '../lib/api';
 
 export default async function BlogsPage() {
   const posts = await getBlogs();
@@ -19,7 +20,11 @@ export default async function BlogsPage() {
           library by category.
         </p>
       </div>
-      <BlogBrowser posts={posts} categories={categories} />
+      <Suspense
+        fallback={<div className="text-center py-8">Loading blogs...</div>}
+      >
+        <BlogBrowser posts={posts} categories={categories} />
+      </Suspense>
     </section>
   );
 }

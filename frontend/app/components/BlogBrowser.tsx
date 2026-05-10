@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { BlogCard } from "./BlogCard";
-import type { BlogPost } from "../lib/api";
+import { useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import type { BlogPost } from '../lib/api';
+import { BlogCard } from './BlogCard';
 
 export function BlogBrowser({
   posts,
@@ -13,15 +13,18 @@ export function BlogBrowser({
   categories: string[];
 }) {
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState(searchParams.get("category") ?? "All");
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState(
+    searchParams.get('category') ?? 'All',
+  );
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
-      const matchesQuery = `${post.title} ${post.shortDescription} ${post.category}`
-        .toLowerCase()
-        .includes(query.toLowerCase());
-      const matchesCategory = category === "All" || post.category === category;
+      const matchesQuery =
+        `${post.title} ${post.shortDescription} ${post.category}`
+          .toLowerCase()
+          .includes(query.toLowerCase());
+      const matchesCategory = category === 'All' || post.category === category;
 
       return matchesQuery && matchesCategory;
     });
@@ -58,20 +61,19 @@ export function BlogBrowser({
         </label>
       </div>
 
-      {filteredPosts.length > 0 ? (
+      {filteredPosts.length > 0 ?
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {filteredPosts.map((post) => (
             <BlogCard key={post.id} post={post} />
           ))}
         </div>
-      ) : (
-        <div className="rounded-md border border-dashed border-slate-300 bg-white p-10 text-center">
+      : <div className="rounded-md border border-dashed border-slate-300 bg-white p-10 text-center">
           <h2 className="text-2xl font-bold text-slate-950">No posts found</h2>
           <p className="mt-3 text-slate-600">
             Try a different keyword or choose another category.
           </p>
         </div>
-      )}
+      }
     </div>
   );
 }
