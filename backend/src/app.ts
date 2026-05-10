@@ -4,7 +4,6 @@ import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import authRoutes from './routes/authRoutes';
 import blogRoutes from './routes/blogRoutes';
-import './types/express.d.ts';
 
 const app = express();
 app.use(cors());
